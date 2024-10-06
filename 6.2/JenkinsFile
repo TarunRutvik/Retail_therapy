@@ -20,8 +20,10 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                bat 'mvn test'
+                dir('6.2'){
+                         bat 'mvn test'
                 junit '/target/surefire-reports/*.xml' // Publish test results
+                }   
             }
         }
 
@@ -71,6 +73,6 @@ pipeline {
 
         failure {
             echo 'Pipeline failed.'
-       }
     }
+   }
 }
