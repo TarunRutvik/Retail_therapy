@@ -8,13 +8,14 @@ pipeline {
 
     stages {
         stage('Build') {
-            steps {
+           steps {
                 echo 'Building the project...'
-                dir('6.2/pom.xml')
-                bat 'mvn clean package'
-                archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: false
-            }
+                dir('6.2') {
+                   bat 'mvn clean package'
+                   archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: false
         }
+    }
+}
 
         stage('Test') {
             steps {
@@ -70,6 +71,6 @@ pipeline {
 
         failure {
             echo 'Pipeline failed.'
+       }
     }
-   }
 }
