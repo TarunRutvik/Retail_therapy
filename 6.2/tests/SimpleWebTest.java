@@ -11,7 +11,7 @@ public class SimpleWebTest {
 
     @Before
     public void setUp() {
-        System.setProperty("webdriver.chrome.driver", "C:\Users\manas\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"); // Update the path
+        System.setProperty("webdriver.chrome.driver", "C:\\Users\\tarun\\Downloads\\chromedriver-win64\\chromedriver-win64\\chromedriver.exe"); // Update the path
         driver = new ChromeDriver();
     }
 
