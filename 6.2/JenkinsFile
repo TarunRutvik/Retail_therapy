@@ -10,7 +10,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                sh 'mvn clean package'
+                bat 'mvn clean package'
                 archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: false
             }
         }
@@ -18,7 +18,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                sh 'mvn test'
+                bat 'mvn test'
                 junit '/target/surefire-reports/*.xml' // Publish test results
             }
         }
@@ -27,7 +27,7 @@ pipeline {
             steps {
                 echo 'Running SonarQube analysis...'
                 withSonarQubeEnv('SonarQubeServer') { // Inject SonarQube environment variables
-                    sh 'mvn sonar:sonar -Dsonar.projectKey=your-project'
+                    bat 'mvn sonar:sonar -Dsonar.projectKey=your-project'
                 }
             }
         }
@@ -51,7 +51,7 @@ pipeline {
                 echo 'Deploying application...'
                 script {
                     def imageName = "yourapp:${env.BUILD_NUMBER}"
-                    sh "docker run -d -p 8080:80 ${imageName}"
+                    bat "docker run -d -p 8080:80 ${imageName}"
                 }
             }
         }
@@ -60,7 +60,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up Docker containers...'
-            sh 'docker rm $(docker ps -a -q) || true'
+            bat 'docker rm $(docker ps -a -q) || true'
         }
 
         success {
@@ -69,7 +69,6 @@ pipeline {
 
         failure {
             echo 'Pipeline failed.'
-            emailext to: 'team@example.com', subject: 'Pipeline Failed', body: "Pipeline failed at stage ${env.STAGE_NAME}"
      }
-   }
+    }
 }
