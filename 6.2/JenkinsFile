@@ -10,69 +10,57 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                sh 'mkdir -p build'
-                sh 'cp -r src build/' // Specify necessary files to build
-                archiveArtifacts artifacts: 'build//*', allowEmptyArchive: true
+                sh 'mvn clean package'
+                archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: false
             }
         }
 
         stage('Test') {
             steps {
-               echo 'Running automated tests...'
-               sh 'npm install htmlhint selenium-webdriver' // Local installation
-               sh 'htmlhint build//*.html' // Run HTML validation
-               sh 'mvn clean test' // Run Maven tests
+                echo 'Running tests...'
+                sh 'mvn test'
+                junit '/target/surefire-reports/*.xml' // Publish test results
             }
         }
 
         stage('Code Quality Analysis') {
             steps {
-                echo 'Analyzing code quality with SonarQube...'
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    sh '''
-                    mvn sonar:sonar \
-                        -Dsonar.projectKey=Retail-Therapy \
-                        -Dsonar.host.url=http://localhost:9000 \
-                        -Dsonar.login=$SONAR_TOKEN
-                    '''
+                echo 'Running SonarQube analysis...'
+                withSonarQubeEnv('SonarQubeServer') { // Inject SonarQube environment variables
+                    sh 'mvn sonar:sonar -Dsonar.projectKey=your-project'
+                }
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                echo 'Building and pushing Docker image...'
+                script {
+                    // Declare variables inside the script block
+                    def imageName = "yourapp:${env.BUILD_NUMBER}"
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        def app = docker.build(imageName)
+                        app.push()
+                    }
                 }
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying the application to Test Environment...'
-                def imageName = "yourapp:${env.BUILD_NUMBER}"
-                sh "docker build -t ${imageName} ."
-                sh "docker run -d -p 8080:80 ${imageName}"
-            }
-        }
-
-        stage('Release') {
-            steps {
-                echo 'Releasing to production...'
+                echo 'Deploying application...'
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        def app = docker.build('yourapp:latest')
-                        app.push('latest')
-                    }
+                    def imageName = "yourapp:${env.BUILD_NUMBER}"
+                    sh "docker run -d -p 8080:80 ${imageName}"
                 }
-                sh 'kubectl apply -f kubernetes/production-deployment.yml' // Adjust to your setup
-            }
-        }
-
-        stage('Monitoring and Alerting') {
-            steps {
-                echo 'Setting up monitoring...'
-                sh 'datadog-agent run'
             }
         }
     }
 
     post {
         always {
-            echo 'Cleaning up...'
-            sh 'docker-compose down' // Or remove individual containers/images if needed
+            echo 'Cleaning up Docker containers...'
+            sh 'docker rm $(docker ps -a -q) || true'
         }
 
         success {
@@ -81,7 +69,7 @@ pipeline {
 
         failure {
             echo 'Pipeline failed.'
-            emailext to: 'team@example.com', subject: 'Pipeline Failed', body: "Pipeline ${env.JOB_NAME} failed at stage ${env.STAGE_NAME}"
-       }
-    }
+            emailext to: 'team@example.com', subject: 'Pipeline Failed', body: "Pipeline failed at stage ${env.STAGE_NAME}"
+     }
+   }
 }
