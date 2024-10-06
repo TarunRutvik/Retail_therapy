@@ -10,6 +10,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
+                dir('6.2/pom.xml')
                 bat 'mvn clean package'
                 archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: false
             }
@@ -59,8 +60,8 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up Docker containers...'
-            bat 'docker rm $(docker ps -a -q) || true'
+           echo 'Cleaning up Docker containers...'
+        bat 'for /f "tokens=*" %i in (\'docker ps -q\') do docker rm %i'
         }
 
         success {
@@ -69,6 +70,6 @@ pipeline {
 
         failure {
             echo 'Pipeline failed.'
-     }
     }
+   }
 }
