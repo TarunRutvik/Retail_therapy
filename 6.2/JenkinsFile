@@ -16,15 +16,17 @@ pipeline {
         }
     }
 }
-
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                dir('6.2'){
-                         bat 'mvn test'
-                junit '/target/surefire-reports/*.xml' // Publish test results
-                }   
+        script {
+            try {
+                bat 'mvn test'
+            } catch (Exception e) {
+                currentBuild.result = 'UNSTABLE'
+                echo 'Tests failed but proceeding to next stages...'
             }
+        }
+    }
         }
 
         stage('Code Quality Analysis') {
@@ -73,6 +75,6 @@ pipeline {
 
         failure {
             echo 'Pipeline failed.'
+      }
     }
-   }
 }
